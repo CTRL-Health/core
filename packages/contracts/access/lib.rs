@@ -2,140 +2,114 @@
 
 #[ink::contract]
 mod access {
+    use ink::storage::Mapping;
 
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+    #[derive(scale::Decode, scale::Encode)]
+    #[cfg_attr(feature = "std",derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout))]
+    pub enum AccessLevel { 
+        NoAccess, 
+        Owner, 
+        Admin, 
+        Read 
+    }
+
+    #[derive(scale::Decode, scale::Encode)]
+    #[cfg_attr(feature = "std",derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout))]
+    pub enum AccessKind { 
+        Doc, 
+        DocGroup, 
+        UserGroup 
+    }
+
+    #[derive(scale::Decode, scale::Encode)]
+    #[cfg_attr(feature = "std",derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout))]
+    pub struct Object {
+        id_hash: [u8; 32],
+        id_encr: [u8; 32],
+        key_encr: [u8; 32],
+        level: AccessLevel,
+    }
+
     #[ink(storage)]
     pub struct Access {
-        /// Stores a single `bool` value on the storage.
-        value: bool,
+        access_store: Mapping<[u8; 32], Vec<Object>>,
     }
+
 
     impl Access {
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
+        pub fn new() -> Self {
+            let access_store = Mapping::default();
+            Self { 
+                access_store 
+            }
         }
 
-        /// Constructor that initializes the `bool` value to `false`.
-        ///
-        /// Constructors can delegate to other constructors.
-        #[ink(constructor)]
-        pub fn default() -> Self {
-            Self::new(Default::default())
-        }
-
-        /// A message that can be called on instantiated contracts.
-        /// This one flips the value of the stored `bool` from `true`
-        /// to `false` and vice versa.
         #[ink(message)]
-        pub fn flip(&mut self) {
-            self.value = !self.value;
+        pub fn get_access_by_hash(&self, user_id_hash: [u8; 32], object_id_hash: [u8; 32]) -> Object {
+
+            let objects = self.access_store.get(&user_id_hash).expect("NFD");
+
+            // objects
+
+            for object in objects {
+                if object.id_hash == object_id_hash {
+                    return object;
+                }
+            }
+            // ink_env::panic_str("NFD");
         }
 
-        /// Simply returns the current value of our `bool`.
-        #[ink(message)]
-        pub fn get(&self) -> bool {
-            self.value
-        }
-    }
-
-    /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
-    /// module and test functions are marked with a `#[test]` attribute.
-    /// The below code is technically just normal Rust code.
-    #[cfg(test)]
-    mod tests {
-        /// Imports all the definitions from the outer scope so we can use them here.
-        use super::*;
-
-        /// We test if the default constructor does its job.
-        #[ink::test]
-        fn default_works() {
-            let access = Access::default();
-            assert_eq!(access.get(), false);
-        }
-
-        /// We test a simple use case of our contract.
-        #[ink::test]
-        fn it_works() {
-            let mut access = Access::new(false);
-            assert_eq!(access.get(), false);
-            access.flip();
-            assert_eq!(access.get(), true);
-        }
     }
 
 
-    /// This is how you'd write end-to-end (E2E) or integration tests for ink! contracts.
-    ///
-    /// When running these you need to make sure that you:
-    /// - Compile the tests with the `e2e-tests` feature flag enabled (`--features e2e-tests`)
-    /// - Are running a Substrate node which contains `pallet-contracts` in the background
-    #[cfg(all(test, feature = "e2e-tests"))]
-    mod e2e_tests {
-        /// Imports all the definitions from the outer scope so we can use them here.
-        use super::*;
+    // function getAccessByIdHash(
+    //     bytes32 userIdHash, 
+    //     bytes32 objectIdHash
+    // ) 
+    //     external view returns(Object memory) 
+    // {
+    //     for (uint i; i < accessStore[userIdHash].length; i++){
+    //         if (accessStore[userIdHash][i].idHash == objectIdHash) {
+    //             return accessStore[userIdHash][i];
+    //         }
+    //     }
 
-        /// A helper function used for calling contract messages.
-        use ink_e2e::build_message;
+    //     revert("NFD");
+    // }
 
-        /// The End-to-End test `Result` type.
-        type E2EResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+    // function getUserAccessList(bytes32 userIdHash) external view returns (Object[] memory) {
+    //     require(accessStore[userIdHash].length > 0, "NFD");
+    //     return accessStore[userIdHash];
+    // }
 
-        /// We test that we can upload and instantiate the contract using its default constructor.
-        #[ink_e2e::test]
-        async fn default_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
-            // Given
-            let constructor = AccessRef::default();
+    // function getUserAccessLevel(
+    //     bytes32 userID,
+    //     AccessKind kind,
+    //     bytes32 idHash
+    // )
+    //     internal view returns (AccessLevel) 
+    // {
+    //     bytes32 accessID = keccak256(abi.encode(userID, kind));
+    //     for(uint i; i < accessStore[accessID].length; i++){
+    //         if (accessStore[accessID][i].idHash == idHash) {
+    //             return accessStore[accessID][i].level;
+    //         }
+    //     }
 
-            // When
-            let contract_account_id = client
-                .instantiate("access", &ink_e2e::alice(), constructor, 0, None)
-                .await
-                .expect("instantiate failed")
-                .account_id;
+    //     // Checking groups
+    //     accessID = keccak256(abi.encode(userID, AccessKind.UserGroup));
+    //     for (uint i = 0; i < accessStore[accessID].length; i++) {
+    //         for (uint j = 0; j < accessStore[accessID].length; j++) {
+    //             if (accessStore[accessID][j].idHash == idHash) {
+    //                 return accessStore[accessID][j].level;
+    //             }
+    //         }
+    //     }
 
-            // Then
-            let get = build_message::<AccessRef>(contract_account_id.clone())
-                .call(|access| access.get());
-            let get_result = client.call_dry_run(&ink_e2e::alice(), &get, 0, None).await;
-            assert!(matches!(get_result.return_value(), false));
+    //     return AccessLevel.NoAccess;
+    // }
 
-            Ok(())
-        }
 
-        /// We test that we can read and write a value from the on-chain contract contract.
-        #[ink_e2e::test]
-        async fn it_works(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
-            // Given
-            let constructor = AccessRef::new(false);
-            let contract_account_id = client
-                .instantiate("access", &ink_e2e::bob(), constructor, 0, None)
-                .await
-                .expect("instantiate failed")
-                .account_id;
 
-            let get = build_message::<AccessRef>(contract_account_id.clone())
-                .call(|access| access.get());
-            let get_result = client.call_dry_run(&ink_e2e::bob(), &get, 0, None).await;
-            assert!(matches!(get_result.return_value(), false));
-
-            // When
-            let flip = build_message::<AccessRef>(contract_account_id.clone())
-                .call(|access| access.flip());
-            let _flip_result = client
-                .call(&ink_e2e::bob(), flip, 0, None)
-                .await
-                .expect("flip failed");
-
-            // Then
-            let get = build_message::<AccessRef>(contract_account_id.clone())
-                .call(|access| access.get());
-            let get_result = client.call_dry_run(&ink_e2e::bob(), &get, 0, None).await;
-            assert!(matches!(get_result.return_value(), true));
-
-            Ok(())
-        }
-    }
 }
