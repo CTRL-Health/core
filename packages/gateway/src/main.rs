@@ -11,6 +11,8 @@ use axum::{
 use std::net::SocketAddr;
 use serde::Deserialize;
 use tower_http::services::ServeDir;
+use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
+use tokio::net::TcpListener;
 
 pub use self::error::{Error, Result};
 
@@ -24,14 +26,14 @@ async fn main() {
     .merge(routes_hello())
     .merge(web::routes_login::routes())
     .layer(middleware::map_response(main_response_mapper))
+    .layer(CookieManagerLayer::new())
     .fallback_service(routes_static());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("->>Listening on {addr}\n");
-    axum::Server::bind(&addr)
-        .serve(routes_all.into_make_service())
-        .await
-        .unwrap();
+    // let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3001").await.unwrap();
+    println!("->> LISTENING on {:?}\n", listener.local_addr());
+    axum::serve(listener, routes_all.into_make_service())
+        .await.unwrap();
 }
 
 async fn main_response_mapper(res: Response) -> Response {
