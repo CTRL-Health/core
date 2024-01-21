@@ -23,3 +23,11 @@ packages/contracts/users/Cargo.lock
 packages/contracts/access/target/
 packages/contracts/access/**/*.rs.bk
 packages/contracts/access/Cargo.lock
+
+packages/contracts/patient/target/
+packages/contracts/patient/**/*.rs.bk
+packages/contracts/patient/Cargo.lock
+
+packages/contracts/marketplace/target/
+packages/contracts/marketplace/**/*.rs.bk
+packages/contracts/marketplace/Cargo.lock
