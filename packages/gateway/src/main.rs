@@ -1,4 +1,6 @@
 #![allow(unused)]
+pub use self::error::{Error, Result};
+use crate::model::ModelController;
 
 use axum::{
     Router, 
@@ -14,26 +16,35 @@ use tower_http::services::ServeDir;
 use tower_cookies::{Cookie, CookieManagerLayer, Cookies};
 use tokio::net::TcpListener;
 
-pub use self::error::{Error, Result};
 
+mod ctx;
 mod error;
 mod web;
+mod model;
 
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
+    let mc = ModelController::new().await?;
+
+    let routes_apis = web::routes_tickets::routes(mc.clone())
+        .route_layer(middleware::from_fn(web::mw_auth::mw_require_auth));
+
     let routes_all = Router::new()
     .merge(routes_hello())
     .merge(web::routes_login::routes())
+    .nest("/api", routes_apis)
     .layer(middleware::map_response(main_response_mapper))
     .layer(CookieManagerLayer::new())
     .fallback_service(routes_static());
 
     // let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3001").await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:3001").await.unwrap();
     println!("->> LISTENING on {:?}\n", listener.local_addr());
     axum::serve(listener, routes_all.into_make_service())
         .await.unwrap();
+
+    Ok(())
 }
 
 async fn main_response_mapper(res: Response) -> Response {

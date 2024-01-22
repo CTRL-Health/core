@@ -6,6 +6,9 @@
 
 The project is under active development.
 
+
+1. Dev logs - https://github.com/orgs/CTRL-Health/projects
+
 ## Description
 
 ### Key Features of PatientZero Solution
