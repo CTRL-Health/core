@@ -35,10 +35,13 @@ async fn main() -> Result<()> {
     .merge(web::routes_login::routes())
     .nest("/api", routes_apis)
     .layer(middleware::map_response(main_response_mapper))
+    .layer(middleware::from_fn_with_state(
+        mc.clone(),
+        web::mw_auth::mw_ctx_resolver,
+    ))
     .layer(CookieManagerLayer::new())
     .fallback_service(routes_static());
 
-    // let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
     let listener = TcpListener::bind("127.0.0.1:3001").await.unwrap();
     println!("->> LISTENING on {:?}\n", listener.local_addr());
     axum::serve(listener, routes_all.into_make_service())
