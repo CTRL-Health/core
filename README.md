@@ -19,10 +19,16 @@ The project is under active development.
 
 
 
-```javascript
+```sh
 cargo watch -q -c -w src/ -w .cargo/ -x run
 ```
 
-```javascript
+```sh
 cargo watch -q -c -w tests/ -x "test -q quick_dev -- --nocapture"
+```
+
+```sh
+docker run --rm --name pg -p 5432:5432 \
+   -e POSTGRES_PASSWORD=welcome \
+   postgres:15
 ```
