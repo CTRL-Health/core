@@ -1,18 +1,18 @@
-# Build stage
-FROM rust:1.69-buster as builder
+FROM rust:1.69 as build
 
-WORKDIR /app
+RUN USER=root cargo new --bin core
+WORKDIR /core
 
-COPY . . 
+COPY ./Cargo.lock ./Cargo.lock
+COPY ./Cargo.toml ./Cargo.toml
+RUN cargo build --release
+
+RUN rm src/*.rs
+COPY ./src ./src
 
 RUN cargo build --release
 
-# Production stage
 FROM debian:buster-slim
+COPY --from=build /core/target/release/ /core
 
-WORKDIR /usr/local/bin
-
-COPY --from=builder /app/target/release/ .
-
-ENTRYPOINT ["/core"]
-EXPOSE 3000
+CMD ["/core"]

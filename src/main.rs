@@ -1,7 +1,6 @@
-#![allow(unused)] // For early development.
+#![allow(unused)]
 
-// region:    --- Modules
-
+mod config;
 mod ctx;
 mod error;
 mod log;
@@ -9,6 +8,7 @@ mod model;
 mod web;
 
 pub use self::error::{Error, Result};
+pub use config::config;
 
 use crate::model::ModelManager;
 use crate::web::mw_auth::mw_ctx_resolve;
@@ -20,7 +20,7 @@ use tokio::net::TcpListener;
 use tracing_subscriber::EnvFilter;
 use tracing::info;
 
-// endregion: --- Modules
+
 
 #[tokio::main]
 async fn main() -> Result<()> {
