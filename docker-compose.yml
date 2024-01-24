@@ -1,10 +1,14 @@
 version: '3.9'
 
-services: 
-  gateway:
-    image: "rust:1.75"
-    volumes:
-      - ./packages/gateway:/packages/gateway
-    environment:
-      - USER=akanimoh
-  
+services:
+  rustapp:
+    container_name: rustapp
+    image: fibrinlab/ctrl-health:1.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+
+volumes:
+  pgdata: {}

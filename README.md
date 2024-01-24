@@ -20,7 +20,7 @@ The project is under active development.
 
 
 ```javascript
-cargo watch -q -c -w src/ -x run
+cargo watch -q -c -w src/ -w .cargo/ -x run
 ```
 
 ```javascript

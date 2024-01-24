@@ -1,7 +1,8 @@
-.secret
-.cargo/
-target
+.secrets
+.gitignore
+.env
 
+target
 
 src/target/
 src/**/*.rs.bk
